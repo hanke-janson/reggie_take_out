@@ -3,19 +3,20 @@ package com.reggie.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.reggie.common.Result;
-import com.reggie.dto.SetmealDTO;
+import com.reggie.dto.setmealDTO;
 import com.reggie.entity.Category;
 import com.reggie.entity.Setmeal;
 import com.reggie.service.CategoryService;
-import com.reggie.service.SetmealDishService;
 import com.reggie.service.SetmealService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -28,19 +29,21 @@ public class SetmealController {
     @Autowired
     private SetmealService setmealService;
     @Autowired
-    private SetmealDishService setmealDishService;
-    @Autowired
     private CategoryService categoryService;
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     /**
      * 保存套餐信息
      *
-     * @param setmealDto 用于封装前端传过来的参数
+     * @param setmealDTO 用于封装前端传过来的参数
      * @return 保存成功信息
      */
     @PostMapping
-    public Result<String> save(@RequestBody SetmealDTO setmealDto) {
-        setmealService.saveWithDish(setmealDto);
+    public Result<String> save(@RequestBody setmealDTO setmealDTO) {
+        setmealService.saveWithDish(setmealDTO);
+        String key = "setmeal:*";
+        redisTemplate.delete(key);
         return Result.success("新增套餐成功！");
     }
 
@@ -53,9 +56,9 @@ public class SetmealController {
      * @return 套餐分页数据
      */
     @GetMapping("/page")
-    public Result<Page<SetmealDTO>> page(int page, int pageSize, String name) {
+    public Result<Page<setmealDTO>> page(int page, int pageSize, String name) {
         Page<Setmeal> pageInfo = new Page<>(page, pageSize);
-        Page<SetmealDTO> setmealDTOPage = new Page<>();
+        Page<setmealDTO> setmealDTOPage = new Page<>();
         LambdaQueryWrapper<Setmeal> setmealLambdaQueryWrapper = new LambdaQueryWrapper<>();
         setmealLambdaQueryWrapper.like(!StringUtils.isBlank(name), Setmeal::getName, name);
         setmealLambdaQueryWrapper.orderByDesc(Setmeal::getUpdateTime);
@@ -63,8 +66,8 @@ public class SetmealController {
 
         BeanUtils.copyProperties(pageInfo, setmealDTOPage, "records");
         List<Setmeal> records = pageInfo.getRecords();
-        List<SetmealDTO> list = records.stream().map(setmeal -> {
-            SetmealDTO setmealDTO = new SetmealDTO();
+        List<setmealDTO> list = records.stream().map(setmeal -> {
+            setmealDTO setmealDTO = new setmealDTO();
             // 对象拷贝
             BeanUtils.copyProperties(setmeal, setmealDTO);
             // 获取菜品分类名
@@ -90,6 +93,8 @@ public class SetmealController {
     public Result<String> delete(@RequestParam List<Long> ids) {
         log.info("将要被删除的套餐id:{}", ids);
         setmealService.removeWithDish(ids);
+        String key = "setmeal:*";
+        redisTemplate.delete(key);
         return Result.success("套餐数据删除成功！");
     }
 
@@ -101,11 +106,18 @@ public class SetmealController {
      */
     @GetMapping("/list")
     public Result<List<Setmeal>> list(Setmeal setmeal) {
+        List<Setmeal> list = null;
+        String key = "setmeal:" + setmeal.getCategoryId() + ":" + setmeal.getStatus();
+        list = (List<Setmeal>) redisTemplate.opsForValue().get(key);
+        if (list != null) {
+            return Result.success(list);
+        }
         LambdaQueryWrapper<Setmeal> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(setmeal.getCategoryId() != null, Setmeal::getCategoryId, setmeal.getCategoryId());
         queryWrapper.eq(setmeal.getStatus() != null, Setmeal::getStatus, setmeal.getStatus());
         queryWrapper.orderByDesc(Setmeal::getUpdateTime);
-        List<Setmeal> list = setmealService.list(queryWrapper);
+        list = setmealService.list(queryWrapper);
+        redisTemplate.opsForValue().set(key, list, 60, TimeUnit.MINUTES);
         return Result.success(list);
     }
 }

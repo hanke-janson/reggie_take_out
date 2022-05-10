@@ -2,7 +2,7 @@ package com.reggie.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.reggie.dto.SetmealDTO;
+import com.reggie.dto.setmealDTO;
 import com.reggie.entity.Setmeal;
 import com.reggie.entity.SetmealDish;
 import com.reggie.exception.CustomException;
@@ -22,18 +22,18 @@ public class SetmealServiceImpl extends ServiceImpl<SetmealMapper, Setmeal> impl
     /**
      * 新增套餐，同时要保存套餐和菜品的关系
      *
-     * @param setmealDto 请求数据
+     * @param setmealDTO 请求数据
      */
     @Transactional
     @Override
-    public void saveWithDish(SetmealDTO setmealDto) {
+    public void saveWithDish(setmealDTO setmealDTO) {
         // 保存套餐基本信息
-        this.save(setmealDto);
+        this.save(setmealDTO);
         // 获取套餐关联的菜品集合，并为集合中的每一个元素赋值套餐ID(setmealId)
-        List<SetmealDish> setmealDishes = setmealDto
+        List<SetmealDish> setmealDishes = setmealDTO
                 .getSetmealDishes()
                 .stream()
-                .peek(setmealDish -> setmealDish.setSetmealId(setmealDto.getId()))
+                .peek(setmealDish -> setmealDish.setSetmealId(setmealDTO.getId()))
                 .collect(Collectors.toList()
                 );
         // 批量保存套餐关联的菜品集合
