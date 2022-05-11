@@ -6,7 +6,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class setmealDTO extends Setmeal {
+public class SetmealDTO extends Setmeal {
 
     private List<SetmealDish> setmealDishes;
 

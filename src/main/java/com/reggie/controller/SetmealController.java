@@ -3,7 +3,7 @@ package com.reggie.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.reggie.common.Result;
-import com.reggie.dto.setmealDTO;
+import com.reggie.dto.SetmealDTO;
 import com.reggie.entity.Category;
 import com.reggie.entity.Setmeal;
 import com.reggie.service.CategoryService;
@@ -40,7 +40,7 @@ public class SetmealController {
      * @return 保存成功信息
      */
     @PostMapping
-    public Result<String> save(@RequestBody setmealDTO setmealDTO) {
+    public Result<String> save(@RequestBody SetmealDTO setmealDTO) {
         setmealService.saveWithDish(setmealDTO);
         String key = "setmeal:*";
         redisTemplate.delete(key);
@@ -56,9 +56,9 @@ public class SetmealController {
      * @return 套餐分页数据
      */
     @GetMapping("/page")
-    public Result<Page<setmealDTO>> page(int page, int pageSize, String name) {
+    public Result<Page<SetmealDTO>> page(int page, int pageSize, String name) {
         Page<Setmeal> pageInfo = new Page<>(page, pageSize);
-        Page<setmealDTO> setmealDTOPage = new Page<>();
+        Page<SetmealDTO> setmealDTOPage = new Page<>();
         LambdaQueryWrapper<Setmeal> setmealLambdaQueryWrapper = new LambdaQueryWrapper<>();
         setmealLambdaQueryWrapper.like(!StringUtils.isBlank(name), Setmeal::getName, name);
         setmealLambdaQueryWrapper.orderByDesc(Setmeal::getUpdateTime);
@@ -66,8 +66,8 @@ public class SetmealController {
 
         BeanUtils.copyProperties(pageInfo, setmealDTOPage, "records");
         List<Setmeal> records = pageInfo.getRecords();
-        List<setmealDTO> list = records.stream().map(setmeal -> {
-            setmealDTO setmealDTO = new setmealDTO();
+        List<SetmealDTO> list = records.stream().map(setmeal -> {
+            SetmealDTO setmealDTO = new SetmealDTO();
             // 对象拷贝
             BeanUtils.copyProperties(setmeal, setmealDTO);
             // 获取菜品分类名
