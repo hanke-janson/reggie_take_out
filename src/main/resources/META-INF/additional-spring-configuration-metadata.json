@@ -1,0 +1,8 @@
+{
+  "properties": [
+    {
+      "name": "spring.shardingsphere.main.allow-bean-definition-overriding",
+      "type": "java.lang.String",
+      "description": "Description for spring.shardingsphere.main.allow-bean-definition-overriding."
+  }
+] }
